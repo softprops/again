@@ -1,4 +1,4 @@
-//! refut is a wasm-compatible utility for retrying standard library Futures targetting
+//! again is a wasm-compatible utility for retrying standard library Futures targetting
 //! futures with a `Result` output type
 //!
 //! # Examples
@@ -9,18 +9,18 @@
 //! will retry a task every second for 5 seconds with an exponential backoff
 //!
 //! ```no_run
-//! refut::retry(|| reqwest::get("https://api.company.com"));
+//! again::retry(|| reqwest::get("https://api.company.com"));
 //! ```
 //! ## Conditional retries
 //!
-//! By default, refut will retrying any failed future. In some cases
+//! By default, again will retrying any failed future. In some cases
 //! you may wish to discriminate which types of errors should be retried
 //! and which shouldn't. In those cases you may with to use `retry_if`, which
 //! accepts an additional closure to conditionally determine if the error
 //! should be retired.
 //!
 //! ```no_run
-//! refut::retry_if(
+//! again::retry_if(
 //!     || reqwest::get("https://api.company.com"),
 //!     |err: &reqwest::Error| !err.is_builder(),
 //! );
@@ -34,7 +34,7 @@
 //! across operations. For more information see the [`Policy`](struct.Policy.html) type's docs.
 //!
 //! ```no_run
-//! use refut::Policy;
+//! use again::Policy;
 //! use std::time::Duration;
 //!
 //! let policy = Policy::fixed(Duration::from_millis(100))
