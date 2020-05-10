@@ -3,7 +3,7 @@
 </h1>
 
 <p align="center">
-   retryable failable Rustlang std library futures
+   retryable faillible Rustlang std library futures
 </p>
 
 <div align="center">
