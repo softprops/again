@@ -1,24 +1,21 @@
-use again::Policy;
-use std::{rc::Rc, sync::Mutex, time::Duration};
+use std::{rc::Rc, sync::Mutex};
 
 #[tokio::main]
-async fn main() -> Result<(), String> {
+async fn main() -> Result<(), &'static str> {
     pretty_env_logger::init();
     let counter = Rc::new(Mutex::new(0 as usize));
-    Policy::fixed(Duration::from_secs(1))
-        .with_max_retries(10)
-        .retry(move || {
-            let counter = counter.clone();
-            async move {
-                let mut num = counter.lock().unwrap();
-                if *num > 5 {
-                    Ok(*num)
-                } else {
-                    *num += 1;
-                    Err(format!("{} was too low try again", *num - 1))
-                }
+    again::retry(move || {
+        let counter = counter.clone();
+        async move {
+            let mut num = counter.lock().unwrap();
+            if *num > 1 {
+                Ok(true)
+            } else {
+                *num += 1;
+                Err("nope")
             }
-        })
-        .await?;
+        }
+    })
+    .await?;
     Ok(())
 }

@@ -1,21 +1,21 @@
-//! again is a wasm-compatible utility for retrying standard library Futures targetting
-//! futures with a `Result` output type
+//! `Again` is a wasm-compatible utility for retrying standard library [`Futures`](https://doc.rust-lang.org/std/future/trait.Future.html) with a `Result` output type
 //!
 //! # Examples
 //!
 //! ## Hello world
 //!
-//! For very simple cases, you can use the module level `retry` fn, which
+//! For simple cases, you can use the module level [`retry`](fn.retry.html) fn, which
 //! will retry a task every second for 5 seconds with an exponential backoff
 //!
 //! ```no_run
 //! again::retry(|| reqwest::get("https://api.company.com"));
 //! ```
+//!
 //! ## Conditional retries
 //!
-//! By default, again will retrying any failed future. In some cases
+//! By default, `again` will retrying any failed Future. In some cases
 //! you may wish to discriminate which types of errors should be retried
-//! and which shouldn't. In those cases you may with to use `retry_if`, which
+//! and which shouldn't. In those cases you may wish to use the [`retry_if`](fn.retry_if.html), which
 //! accepts an additional closure to conditionally determine if the error
 //! should be retired.
 //!
@@ -25,19 +25,20 @@
 //!     |err: &reqwest::Error| !err.is_builder(),
 //! );
 //! ```
+//!
 //! ## Retry policies
 //!
 //! Every application has different needs. The default retry behavior
 //! many not suit all of them. You can define your own retry behavior
-//! with a retry `Policy`. A [`Policy`](struct.Policy.html) can declare fixed or exponential backoff,
+//! with a [`RetryPolicy`](struct.RetryPolicy.html). A RetryPolicy can be configured with a fixed or exponential backoff,
 //! jitter, and other common retry options. This objects may be reused
-//! across operations. For more information see the [`Policy`](struct.Policy.html) type's docs.
+//! across operations. For more information see the [`RetryPolicy`](struct.RetryPolicy.html) type's docs.
 //!
 //! ```no_run
-//! use again::Policy;
+//! use again::RetryPolicy;
 //! use std::time::Duration;
 //!
-//! let policy = Policy::fixed(Duration::from_millis(100))
+//! let policy = RetryPolicy::fixed(Duration::from_millis(100))
 //!     .with_max_retries(10)
 //!     .with_jitter(false);
 //!
@@ -47,7 +48,11 @@ use rand::{distributions::OpenClosed01, thread_rng, Rng};
 use std::{cmp::min, future::Future, time::Duration};
 use wasm_timer::Delay;
 
-/// Retries a fallible future
+/// Retries a fallible Future
+///
+/// ```
+/// again::retry(|| async { Ok::<u32, ()>(42) });
+/// ```
 pub async fn retry<T>(task: T) -> Result<T::Item, T::Error>
 where
     T: Task,
@@ -55,7 +60,11 @@ where
     crate::retry_if(task, |_: &T::Error| true).await
 }
 
-/// Retries a fallible future under a certain provided conditions
+/// Retries a fallible Future under a certain provided conditions
+///
+/// ```
+/// again::retry_if(|| async { Err::<u32, u32>(7) }, |err: &u32| *err != 42);
+/// ```
 pub async fn retry_if<T, C>(
     task: T,
     condition: C,
@@ -64,7 +73,7 @@ where
     T: Task,
     C: Condition<T::Error>,
 {
-    Policy::default().retry_if(task, condition).await
+    RetryPolicy::default().retry_if(task, condition).await
 }
 
 #[derive(Clone, Copy)]
@@ -76,7 +85,7 @@ enum Backoff {
 impl Backoff {
     fn iter(
         self,
-        policy: &Policy,
+        policy: &RetryPolicy,
     ) -> BackoffIter {
         BackoffIter {
             backoff: self,
@@ -141,12 +150,24 @@ impl Default for Backoff {
 
 /// A template for configuring retry behavior
 #[derive(Clone)]
-pub struct Policy {
+pub struct RetryPolicy {
     backoff: Backoff,
     jitter: bool,
     delay: Duration,
     max_delay: Option<Duration>,
     max_retries: usize,
+}
+
+impl Default for RetryPolicy {
+    fn default() -> Self {
+        Self {
+            backoff: Backoff::default(),
+            delay: Duration::from_secs(1),
+            jitter: false,
+            max_delay: None,
+            max_retries: 5,
+        }
+    }
 }
 
 fn jitter(duration: Duration) -> Duration {
@@ -157,19 +178,7 @@ fn jitter(duration: Duration) -> Duration {
     Duration::from_millis(millis as u64)
 }
 
-impl Default for Policy {
-    fn default() -> Policy {
-        Policy {
-            backoff: Backoff::default(),
-            delay: Duration::from_secs(1),
-            jitter: false,
-            max_delay: None,
-            max_retries: 5,
-        }
-    }
-}
-
-impl Policy {
+impl RetryPolicy {
     fn backoffs(&self) -> impl Iterator<Item = Duration> {
         self.backoff.iter(self)
     }
@@ -183,10 +192,10 @@ impl Policy {
     /// length over time. You may wish to cap just how long
     /// using the [`with_max_delay`](struct.Policy.html#method.with_max_delay) fn
     pub fn exponential(delay: Duration) -> Self {
-        Policy {
+        Self {
             backoff: Backoff::Exponential,
             delay,
-            ..Policy::default()
+            ..Self::default()
         }
     }
 
@@ -197,16 +206,16 @@ impl Policy {
     ///
     /// These delays will increase in
     /// length over time. You may wish to configure how many
-    /// times a future will be retired using the [`with_max_retries`](struct.Policy.html#method.with_max_retries) fn    
+    /// times a future will be retired using the [`with_max_retries`](struct.RetryPolicy.html#method.with_max_retries) fn    
     pub fn fixed(delay: Duration) -> Self {
-        Policy {
+        Self {
             backoff: Backoff::Fixed,
             delay,
-            ..Policy::default()
+            ..Self::default()
         }
     }
 
-    /// Configures randomness to delay between retries.
+    /// Configures randomness to the delay between retries.
     ///
     /// This is useful for services that have many clients to avoid
     /// the "thundering herd" problem
@@ -236,7 +245,7 @@ impl Policy {
         self
     }
 
-    /// Retries a fallible future with this policy's configuration
+    /// Retries a fallible Future with this policy's configuration
     pub async fn retry<T>(
         &self,
         task: T,
@@ -339,7 +348,7 @@ mod tests {
 
     #[test]
     fn fixed_backoff() {
-        let mut iter = Policy::fixed(Duration::from_secs(1)).backoffs();
+        let mut iter = RetryPolicy::fixed(Duration::from_secs(1)).backoffs();
         assert_eq!(iter.next(), Some(Duration::from_secs(1)));
         assert_eq!(iter.next(), Some(Duration::from_secs(1)));
         assert_eq!(iter.next(), Some(Duration::from_secs(1)));
@@ -348,7 +357,7 @@ mod tests {
 
     #[test]
     fn exponential_backoff() {
-        let mut iter = Policy::exponential(Duration::from_secs(1)).backoffs();
+        let mut iter = RetryPolicy::exponential(Duration::from_secs(1)).backoffs();
         assert_eq!(iter.next(), Some(Duration::from_secs(1)));
         assert_eq!(iter.next(), Some(Duration::from_secs(2)));
         assert_eq!(iter.next(), Some(Duration::from_secs(4)));
@@ -385,7 +394,7 @@ mod tests {
 
     #[tokio::test]
     async fn ok_futures_yield_ok() -> Result<(), Box<dyn Error>> {
-        let result = Policy::default()
+        let result = RetryPolicy::default()
             .retry(|| async { Ok::<u32, ()>(42) })
             .await;
         assert_eq!(result, Ok(42));
@@ -393,8 +402,8 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn ok_futures_yield_retries() -> Result<(), Box<dyn Error>> {
-        let result = Policy::fixed(Duration::from_millis(1))
+    async fn failed_futures_yield_err() -> Result<(), Box<dyn Error>> {
+        let result = RetryPolicy::fixed(Duration::from_millis(1))
             .retry(|| async { Err::<u32, ()>(()) })
             .await;
         assert_eq!(result, Err(()));
