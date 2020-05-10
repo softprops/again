@@ -149,6 +149,10 @@ impl Default for Backoff {
 }
 
 /// A template for configuring retry behavior
+///
+/// A default is provided configured
+/// to retry a task 5 times with exponential backoff
+/// starting with a 1 second delay
 #[derive(Clone)]
 pub struct RetryPolicy {
     backoff: Backoff,
@@ -341,6 +345,10 @@ mod tests {
     use super::*;
     use std::error::Error;
 
+    #[test]
+    fn jitter_adds_variance_to_durations() {
+        assert!(jitter(Duration::from_secs(1)) != Duration::from_secs(1));
+    }
     #[test]
     fn backoff_default() {
         assert!(matches!(Backoff::default(), Backoff::Exponential));
