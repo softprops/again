@@ -379,6 +379,7 @@ mod tests {
             C: Condition<()>,
         {
         }
+        #[allow(clippy::trivially_copy_pass_by_ref)]
         fn foo(_err: &()) -> bool {
             true
         }
