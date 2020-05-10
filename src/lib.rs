@@ -190,7 +190,7 @@ impl RetryPolicy {
     /// Configures policy with an exponential
     /// backoff delay.
     ///
-    /// By default, futures will be retied 5 times.
+    /// By default, Futures will be retied 5 times.
     ///
     /// These delays will increase in
     /// length over time. You may wish to cap just how long
@@ -206,11 +206,11 @@ impl RetryPolicy {
     /// Configures policy with a fixed
     /// backoff delay.
     ///
-    /// By default, futures will be retied 5 times.
+    /// By default, Futures will be retied 5 times.
     ///
     /// These delays will increase in
     /// length over time. You may wish to configure how many
-    /// times a future will be retired using the [`with_max_retries`](struct.RetryPolicy.html#method.with_max_retries) fn    
+    /// times a Future will be retired using the [`with_max_retries`](struct.RetryPolicy.html#method.with_max_retries) fn    
     pub fn fixed(delay: Duration) -> Self {
         Self {
             backoff: Backoff::Fixed,
@@ -240,7 +240,7 @@ impl RetryPolicy {
         self
     }
 
-    /// Limits the maximum number of attempts a future will be tried
+    /// Limits the maximum number of attempts a Future will be tried
     pub fn with_max_retries(
         mut self,
         max: usize,
@@ -260,7 +260,7 @@ impl RetryPolicy {
         self.retry_if(task, |_: &T::Error| true).await
     }
 
-    /// Retries a fallible future with this policy's configuration under certain provided conditions
+    /// Retries a fallible Future with this policy's configuration under certain provided conditions
     pub async fn retry_if<T, C>(
         &self,
         task: T,
@@ -295,9 +295,9 @@ impl RetryPolicy {
     }
 }
 
-/// A type to determine if a failed future should be retrieed
+/// A type to determine if a failed Future should be retrieed
 pub trait Condition<E> {
-    /// Return true if an futures error is worth retrying
+    /// Return true if an Futures error is worth retrying
     fn is_retryable(
         &mut self,
         error: &E,
