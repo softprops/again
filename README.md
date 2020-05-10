@@ -25,8 +25,48 @@
 
 A goal of any operation should be a successful outcome. This crate gives operations a better chance at achiving that success.
 
-## install
+## 📦 install
 
-## usage
+
+In your Cargo.toml file, add the following under the `[dependencies]` heading
+
+```toml
+again = "0.1"
+```
+
+## 🤸usage
+
+For very simple cases you can use the module level `retry` function
+to retry a potentially faillible operation.
+
+```rust
+use std::error::Error;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error>> {
+    pretty_env_logger::init();
+    again::retry(|| reqwest::get("https://api.you.com")).await?;
+    Ok(())
+}
+```
+
+You can also customize retry behavior to suit your applications needs
+with a reusable `RetryPolicy`.
+
+```rust
+use std::error::Error;
+use std::time::Duration;
+use again::RetryPolicy;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error>> {
+    pretty_env_logger::init();
+    let policy = RetryPolicy.exponential(Duration::from_millis(200))
+      .with_max_retries(10)
+      .with_jitter(true);
+    again::retry(|| reqwest::get("https://api.you.com")).await?;
+    Ok(())
+}
+```
 
 Doug Tangren (softprops) 2020
