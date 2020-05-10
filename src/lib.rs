@@ -9,9 +9,7 @@
 //! will retry a task every second for 5 seconds with an exponential backoff
 //!
 //! ```no_run
-//! # fn main() {
 //! refut::retry(|| reqwest::get("https://api.company.com"));
-//! # }
 //! ```
 //! ## Conditional retries
 //!
@@ -22,12 +20,10 @@
 //! should be retired.
 //!
 //! ```no_run
-//! # fn main() {
 //! refut::retry_if(
 //!     || reqwest::get("https://api.company.com"),
 //!     |err: &reqwest::Error| !err.is_builder(),
 //! );
-//! # }
 //! ```
 //! ## Retry policies
 //!
@@ -41,13 +37,11 @@
 //! use refut::Policy;
 //! use std::time::Duration;
 //!
-//! # fn main() {
 //! let policy = Policy::fixed(Duration::from_millis(100))
 //!     .with_max_retries(10)
 //!     .with_jitter(false);
 //!
 //! policy.retry(|| reqwest::get("https://api.company.com"));
-//! # }
 //! ```
 use rand::{distributions::OpenClosed01, thread_rng, Rng};
 use std::{cmp::min, future::Future, time::Duration};
