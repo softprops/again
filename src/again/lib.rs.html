@@ -419,8 +419,18 @@
 <span id="419">419</span>
 <span id="420">420</span>
 <span id="421">421</span>
+<span id="422">422</span>
+<span id="423">423</span>
+<span id="424">424</span>
+<span id="425">425</span>
+<span id="426">426</span>
+<span id="427">427</span>
+<span id="428">428</span>
+<span id="429">429</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! `Again` is a wasm-compatible utility for retrying standard library [`Futures`](https://doc.rust-lang.org/std/future/trait.Future.html) with a `Result` output type</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! A goal of any operation should be a successful outcome. This crate gives operations a better chance at achieving that.</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! # Examples</span>
 <span class="doccomment">//!</span>
@@ -438,13 +448,13 @@
 <span class="doccomment">//! By default, `again` will retry any failed Future with its output type is an `Result` `Err`. In some cases</span>
 <span class="doccomment">//! you may wish to discriminate which types of errors should be retried</span>
 <span class="doccomment">//! and which shouldn&#39;t. In those cases you may wish to use the [`retry_if`](fn.retry_if.html) fn, which</span>
-<span class="doccomment">//! accepts an additional closure to conditionally determine if the error</span>
+<span class="doccomment">//! accepts an additional argument to conditionally determine if the error</span>
 <span class="doccomment">//! should be retired.</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! ```no_run</span>
 <span class="doccomment">//! again::retry_if(</span>
 <span class="doccomment">//!     || reqwest::get(&quot;https://api.company.com&quot;),</span>
-<span class="doccomment">//!     |err: &amp;reqwest::Error| !err.is_builder(),</span>
+<span class="doccomment">//!     reqwest::Error::is_status,</span>
 <span class="doccomment">//! );</span>
 <span class="doccomment">//! ```</span>
 <span class="doccomment">//!</span>
@@ -717,7 +727,9 @@
     }
 }
 
-<span class="doccomment">/// A type to determine if a failed Future should be retrieed</span>
+<span class="doccomment">/// A type to determine if a failed Future should be retried</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// A implementatin is provided for `Fn(&amp;Err) -&gt; bool`</span>
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Condition</span><span class="op">&lt;</span><span class="ident">E</span><span class="op">&gt;</span> {
     <span class="doccomment">/// Return true if an Futures error is worth retrying</span>
     <span class="kw">fn</span> <span class="ident">is_retryable</span>(
@@ -739,8 +751,12 @@
 }
 
 <span class="doccomment">/// A unit of work to be retried</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// A implementatin is provided for `FnMut() -&gt; Future`</span>
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Task</span> {
+    <span class="doccomment">/// The Ok type of Future ouput</span>
     <span class="kw">type</span> <span class="ident">Item</span>;
+    <span class="doccomment">/// The Err type of Future output</span>
     <span class="kw">type</span> <span class="ident">Error</span>: <span class="ident">std</span>::<span class="ident">fmt</span>::<span class="ident">Debug</span>;
     <span class="kw">type</span> <span class="ident">Fut</span>: <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Output</span> <span class="op">=</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>::<span class="ident">Item</span>, <span class="self">Self</span>::<span class="ident">Error</span><span class="op">&gt;</span><span class="op">&gt;</span>;
 
