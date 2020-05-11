@@ -23,7 +23,7 @@
 
 <br />
 
-A goal of any operation should be a successful outcome. This crate gives operations a better chance at achiving that success.
+A goal of any operation should be a successful outcome. This crate gives operations a better chance at achiving that.
 
 ## 📦 install
 

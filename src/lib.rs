@@ -13,9 +13,9 @@
 //!
 //! ## Conditional retries
 //!
-//! By default, `again` will retrying any failed Future. In some cases
+//! By default, `again` will retry any failed Future with its output type is an `Result` `Err`. In some cases
 //! you may wish to discriminate which types of errors should be retried
-//! and which shouldn't. In those cases you may wish to use the [`retry_if`](fn.retry_if.html), which
+//! and which shouldn't. In those cases you may wish to use the [`retry_if`](fn.retry_if.html) fn, which
 //! accepts an additional closure to conditionally determine if the error
 //! should be retired.
 //!
@@ -28,7 +28,7 @@
 //!
 //! ## Retry policies
 //!
-//! Every application has different needs. The default retry behavior
+//! Every application has different needs. The default retry behavior in `again`
 //! many not suit all of them. You can define your own retry behavior
 //! with a [`RetryPolicy`](struct.RetryPolicy.html). A RetryPolicy can be configured with a fixed or exponential backoff,
 //! jitter, and other common retry options. This objects may be reused
@@ -150,7 +150,7 @@ impl Default for Backoff {
 
 /// A template for configuring retry behavior
 ///
-/// A default is provided configured
+/// A default is configured
 /// to retry a task 5 times with exponential backoff
 /// starting with a 1 second delay
 #[derive(Clone)]
