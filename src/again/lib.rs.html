@@ -435,9 +435,9 @@
 <span class="doccomment">//!</span>
 <span class="doccomment">//! ## Conditional retries</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! By default, `again` will retrying any failed Future. In some cases</span>
+<span class="doccomment">//! By default, `again` will retry any failed Future with its output type is an `Result` `Err`. In some cases</span>
 <span class="doccomment">//! you may wish to discriminate which types of errors should be retried</span>
-<span class="doccomment">//! and which shouldn&#39;t. In those cases you may wish to use the [`retry_if`](fn.retry_if.html), which</span>
+<span class="doccomment">//! and which shouldn&#39;t. In those cases you may wish to use the [`retry_if`](fn.retry_if.html) fn, which</span>
 <span class="doccomment">//! accepts an additional closure to conditionally determine if the error</span>
 <span class="doccomment">//! should be retired.</span>
 <span class="doccomment">//!</span>
@@ -450,7 +450,7 @@
 <span class="doccomment">//!</span>
 <span class="doccomment">//! ## Retry policies</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! Every application has different needs. The default retry behavior</span>
+<span class="doccomment">//! Every application has different needs. The default retry behavior in `again`</span>
 <span class="doccomment">//! many not suit all of them. You can define your own retry behavior</span>
 <span class="doccomment">//! with a [`RetryPolicy`](struct.RetryPolicy.html). A RetryPolicy can be configured with a fixed or exponential backoff,</span>
 <span class="doccomment">//! jitter, and other common retry options. This objects may be reused</span>
@@ -572,7 +572,7 @@
 
 <span class="doccomment">/// A template for configuring retry behavior</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// A default is provided configured</span>
+<span class="doccomment">/// A default is configured</span>
 <span class="doccomment">/// to retry a task 5 times with exponential backoff</span>
 <span class="doccomment">/// starting with a 1 second delay</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>)]</span>
