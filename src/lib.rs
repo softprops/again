@@ -1,5 +1,7 @@
 //! `Again` is a wasm-compatible utility for retrying standard library [`Futures`](https://doc.rust-lang.org/std/future/trait.Future.html) with a `Result` output type
 //!
+//! A goal of any operation should be a successful outcome. This crate gives operations a better chance at achieving that.
+//!
 //! # Examples
 //!
 //! ## Hello world
@@ -16,13 +18,13 @@
 //! By default, `again` will retry any failed Future with its output type is an `Result` `Err`. In some cases
 //! you may wish to discriminate which types of errors should be retried
 //! and which shouldn't. In those cases you may wish to use the [`retry_if`](fn.retry_if.html) fn, which
-//! accepts an additional closure to conditionally determine if the error
+//! accepts an additional argument to conditionally determine if the error
 //! should be retired.
 //!
 //! ```no_run
 //! again::retry_if(
 //!     || reqwest::get("https://api.company.com"),
-//!     |err: &reqwest::Error| !err.is_builder(),
+//!     reqwest::Error::is_status,
 //! );
 //! ```
 //!
@@ -295,7 +297,9 @@ impl RetryPolicy {
     }
 }
 
-/// A type to determine if a failed Future should be retrieed
+/// A type to determine if a failed Future should be retried
+///
+/// A implementatin is provided for `Fn(&Err) -> bool`
 pub trait Condition<E> {
     /// Return true if an Futures error is worth retrying
     fn is_retryable(
@@ -317,8 +321,12 @@ where
 }
 
 /// A unit of work to be retried
+///
+/// A implementatin is provided for `FnMut() -> Future`
 pub trait Task {
+    /// The Ok type of Future ouput
     type Item;
+    /// The Err type of Future output
     type Error: std::fmt::Debug;
     type Fut: Future<Output = Result<Self::Item, Self::Error>>;
 

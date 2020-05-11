@@ -3,7 +3,7 @@
 </h1>
 
 <p align="center">
-   retryable faillible Rustlang std library futures
+   retry interfaces for fallible Rustlang std library Futures
 </p>
 
 <div align="center">
@@ -23,10 +23,9 @@
 
 <br />
 
-A goal of any operation should be a successful outcome. This crate gives operations a better chance at achiving that.
+A goal of any operation should be a successful outcome. This crate gives operations a better chance at achieving that.
 
 ## 📦 install
-
 
 In your Cargo.toml file, add the following under the `[dependencies]` heading
 
@@ -37,7 +36,7 @@ again = "0.1"
 ## 🤸usage
 
 For very simple cases you can use the module level `retry` function
-to retry a potentially faillible operation.
+to retry a potentially fallible operation.
 
 ```rust
 use std::error::Error;
@@ -68,5 +67,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 ```
+
+See the [docs](http://docs.rs/again) for more examples.
 
 Doug Tangren (softprops) 2020
