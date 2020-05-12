@@ -7,7 +7,7 @@
 //! ## Hello world
 //!
 //! For simple cases, you can use the module level [`retry`](fn.retry.html) fn, which
-//! will retry a task every second for 5 seconds with an exponential backoff
+//! will retry a task every second for 5 seconds with an exponential backoff.
 //!
 //! ```no_run
 //! again::retry(|| reqwest::get("https://api.company.com"));
@@ -15,11 +15,10 @@
 //!
 //! ## Conditional retries
 //!
-//! By default, `again` will retry any failed Future with its output type is an `Result` `Err`. In some cases
-//! you may wish to discriminate which types of errors should be retried
-//! and which shouldn't. In those cases you may wish to use the [`retry_if`](fn.retry_if.html) fn, which
+//! By default, `again` will retry any failed `Future` if its `Result` output type is an `Err`.
+//! You may not want to retry _every_ kind of error. In those cases you may wish to use the [`retry_if`](fn.retry_if.html) fn, which
 //! accepts an additional argument to conditionally determine if the error
-//! should be retired.
+//! should be retried.
 //!
 //! ```no_run
 //! again::retry_if(
@@ -31,10 +30,10 @@
 //! ## Retry policies
 //!
 //! Every application has different needs. The default retry behavior in `again`
-//! many not suit all of them. You can define your own retry behavior
+//! likely will not suit all of them. You can define your own retry behavior
 //! with a [`RetryPolicy`](struct.RetryPolicy.html). A RetryPolicy can be configured with a fixed or exponential backoff,
 //! jitter, and other common retry options. This objects may be reused
-//! across operations. For more information see the [`RetryPolicy`](struct.RetryPolicy.html) type's docs.
+//! across operations. For more information see the [`RetryPolicy`](struct.RetryPolicy.html) docs.
 //!
 //! ```no_run
 //! use again::RetryPolicy;
@@ -46,11 +45,16 @@
 //!
 //! policy.retry(|| reqwest::get("https://api.company.com"));
 //! ```
+//!
+//! # Logging
+//!
+//! For visibility on when operations fail and are retired, a `log::trace` message is emitted,
+//! logging the `Debug` display of the error and the delay before the next attempt.
 use rand::{distributions::OpenClosed01, thread_rng, Rng};
 use std::{cmp::min, future::Future, time::Duration};
 use wasm_timer::Delay;
 
-/// Retries a fallible Future
+/// Retries a fallible `Future` with a default `RetryPolicy`
 ///
 /// ```
 /// again::retry(|| async { Ok::<u32, ()>(42) });
@@ -62,7 +66,7 @@ where
     crate::retry_if(task, |_: &T::Error| true).await
 }
 
-/// Retries a fallible Future under a certain provided conditions
+/// Retries a fallible `Future` under a certain provided conditions with a default `RetryPolicy`
 ///
 /// ```
 /// again::retry_if(|| async { Err::<u32, u32>(7) }, |err: &u32| *err != 42);
@@ -82,6 +86,12 @@ where
 enum Backoff {
     Fixed,
     Exponential,
+}
+
+impl Default for Backoff {
+    fn default() -> Self {
+        Backoff::Exponential
+    }
 }
 
 impl Backoff {
@@ -144,15 +154,9 @@ impl Iterator for BackoffIter {
     }
 }
 
-impl Default for Backoff {
-    fn default() -> Self {
-        Backoff::Exponential
-    }
-}
-
 /// A template for configuring retry behavior
 ///
-/// A default is configured
+/// A default is provided, configured
 /// to retry a task 5 times with exponential backoff
 /// starting with a 1 second delay
 #[derive(Clone)]
@@ -223,8 +227,8 @@ impl RetryPolicy {
 
     /// Configures randomness to the delay between retries.
     ///
-    /// This is useful for services that have many clients to avoid
-    /// the "thundering herd" problem
+    /// This is useful for services that have many clients which might all retry at the same time to avoid
+    /// the ["thundering herd" problem](https://en.wikipedia.org/wiki/Thundering_herd_problem)
     pub fn with_jitter(
         mut self,
         jitter: bool,
@@ -251,7 +255,7 @@ impl RetryPolicy {
         self
     }
 
-    /// Retries a fallible Future with this policy's configuration
+    /// Retries a fallible `Future` with this policy's configuration
     pub async fn retry<T>(
         &self,
         task: T,
@@ -262,7 +266,7 @@ impl RetryPolicy {
         self.retry_if(task, |_: &T::Error| true).await
     }
 
-    /// Retries a fallible Future with this policy's configuration under certain provided conditions
+    /// Retries a fallible `Future` with this policy's configuration under certain provided conditions
     pub async fn retry_if<T, C>(
         &self,
         task: T,
@@ -299,7 +303,8 @@ impl RetryPolicy {
 
 /// A type to determine if a failed Future should be retried
 ///
-/// A implementatin is provided for `Fn(&Err) -> bool`
+/// A implementation is provided for `Fn(&Err) -> bool` allowing you
+/// to use simple closure or fn handles
 pub trait Condition<E> {
     /// Return true if an Futures error is worth retrying
     fn is_retryable(
@@ -322,14 +327,15 @@ where
 
 /// A unit of work to be retried
 ///
-/// A implementatin is provided for `FnMut() -> Future`
+/// A implementation is provided for `FnMut() -> Future`
 pub trait Task {
-    /// The Ok type of Future ouput
+    /// The `Ok` variant of a `Futures` associated Output type
     type Item;
-    /// The Err type of Future output
+    /// The `Err` variant of `Futures` associated Output type
     type Error: std::fmt::Debug;
+    /// The resulting `Future` type
     type Fut: Future<Output = Result<Self::Item, Self::Error>>;
-
+    /// Call the operation which invokes results in a `Future`
     fn call(&mut self) -> Self::Fut;
 }
 
