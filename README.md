@@ -49,7 +49,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 }
 ```
 
-You may not want to retry _every_ kind of error. For correctness you can be more explicit in which kinds of errors should be retried with the module level `retry_if` function.
+You may not want to retry _every_ kind of error. For preciseness you can be more explicit in which kinds of errors should be retried with the module level `retry_if` function.
 
 ```rust
 use std::error::Error;
