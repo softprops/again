@@ -427,6 +427,12 @@
 <span id="427">427</span>
 <span id="428">428</span>
 <span id="429">429</span>
+<span id="430">430</span>
+<span id="431">431</span>
+<span id="432">432</span>
+<span id="433">433</span>
+<span id="434">434</span>
+<span id="435">435</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! `Again` is a wasm-compatible utility for retrying standard library [`Futures`](https://doc.rust-lang.org/std/future/trait.Future.html) with a `Result` output type</span>
 <span class="doccomment">//!</span>
@@ -437,7 +443,7 @@
 <span class="doccomment">//! ## Hello world</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! For simple cases, you can use the module level [`retry`](fn.retry.html) fn, which</span>
-<span class="doccomment">//! will retry a task every second for 5 seconds with an exponential backoff</span>
+<span class="doccomment">//! will retry a task every second for 5 seconds with an exponential backoff.</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! ```no_run</span>
 <span class="doccomment">//! again::retry(|| reqwest::get(&quot;https://api.company.com&quot;));</span>
@@ -445,11 +451,10 @@
 <span class="doccomment">//!</span>
 <span class="doccomment">//! ## Conditional retries</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! By default, `again` will retry any failed Future with its output type is an `Result` `Err`. In some cases</span>
-<span class="doccomment">//! you may wish to discriminate which types of errors should be retried</span>
-<span class="doccomment">//! and which shouldn&#39;t. In those cases you may wish to use the [`retry_if`](fn.retry_if.html) fn, which</span>
+<span class="doccomment">//! By default, `again` will retry any failed `Future` if its `Result` output type is an `Err`.</span>
+<span class="doccomment">//! You may not want to retry _every_ kind of error. In those cases you may wish to use the [`retry_if`](fn.retry_if.html) fn, which</span>
 <span class="doccomment">//! accepts an additional argument to conditionally determine if the error</span>
-<span class="doccomment">//! should be retired.</span>
+<span class="doccomment">//! should be retried.</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! ```no_run</span>
 <span class="doccomment">//! again::retry_if(</span>
@@ -461,10 +466,10 @@
 <span class="doccomment">//! ## Retry policies</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Every application has different needs. The default retry behavior in `again`</span>
-<span class="doccomment">//! many not suit all of them. You can define your own retry behavior</span>
+<span class="doccomment">//! likely will not suit all of them. You can define your own retry behavior</span>
 <span class="doccomment">//! with a [`RetryPolicy`](struct.RetryPolicy.html). A RetryPolicy can be configured with a fixed or exponential backoff,</span>
 <span class="doccomment">//! jitter, and other common retry options. This objects may be reused</span>
-<span class="doccomment">//! across operations. For more information see the [`RetryPolicy`](struct.RetryPolicy.html) type&#39;s docs.</span>
+<span class="doccomment">//! across operations. For more information see the [`RetryPolicy`](struct.RetryPolicy.html) docs.</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! ```no_run</span>
 <span class="doccomment">//! use again::RetryPolicy;</span>
@@ -476,11 +481,16 @@
 <span class="doccomment">//!</span>
 <span class="doccomment">//! policy.retry(|| reqwest::get(&quot;https://api.company.com&quot;));</span>
 <span class="doccomment">//! ```</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! # Logging</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! For visibility on when operations fail and are retired, a `log::trace` message is emitted,</span>
+<span class="doccomment">//! logging the `Debug` display of the error and the delay before the next attempt.</span>
 <span class="kw">use</span> <span class="ident">rand</span>::{<span class="ident">distributions</span>::<span class="ident">OpenClosed01</span>, <span class="ident">thread_rng</span>, <span class="ident">Rng</span>};
 <span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">cmp</span>::<span class="ident">min</span>, <span class="ident">future</span>::<span class="ident">Future</span>, <span class="ident">time</span>::<span class="ident">Duration</span>};
 <span class="kw">use</span> <span class="ident">wasm_timer</span>::<span class="ident">Delay</span>;
 
-<span class="doccomment">/// Retries a fallible Future</span>
+<span class="doccomment">/// Retries a fallible `Future` with a default `RetryPolicy`</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// ```</span>
 <span class="doccomment">/// again::retry(|| async { Ok::&lt;u32, ()&gt;(42) });</span>
@@ -492,7 +502,7 @@
     <span class="kw">crate</span>::<span class="ident">retry_if</span>(<span class="ident">task</span>, <span class="op">|</span><span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>::<span class="ident">Error</span><span class="op">|</span> <span class="bool-val">true</span>).<span class="kw">await</span>
 }
 
-<span class="doccomment">/// Retries a fallible Future under a certain provided conditions</span>
+<span class="doccomment">/// Retries a fallible `Future` under a certain provided conditions with a default `RetryPolicy`</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// ```</span>
 <span class="doccomment">/// again::retry_if(|| async { Err::&lt;u32, u32&gt;(7) }, |err: &amp;u32| *err != 42);</span>
@@ -512,6 +522,12 @@
 <span class="kw">enum</span> <span class="ident">Backoff</span> {
     <span class="ident">Fixed</span>,
     <span class="ident">Exponential</span>,
+}
+
+<span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">Backoff</span> {
+    <span class="kw">fn</span> <span class="ident">default</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+        <span class="ident">Backoff</span>::<span class="ident">Exponential</span>
+    }
 }
 
 <span class="kw">impl</span> <span class="ident">Backoff</span> {
@@ -574,15 +590,9 @@
     }
 }
 
-<span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">Backoff</span> {
-    <span class="kw">fn</span> <span class="ident">default</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="ident">Backoff</span>::<span class="ident">Exponential</span>
-    }
-}
-
 <span class="doccomment">/// A template for configuring retry behavior</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// A default is configured</span>
+<span class="doccomment">/// A default is provided, configured</span>
 <span class="doccomment">/// to retry a task 5 times with exponential backoff</span>
 <span class="doccomment">/// starting with a 1 second delay</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>)]</span>
@@ -653,8 +663,8 @@
 
     <span class="doccomment">/// Configures randomness to the delay between retries.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// This is useful for services that have many clients to avoid</span>
-    <span class="doccomment">/// the &quot;thundering herd&quot; problem</span>
+    <span class="doccomment">/// This is useful for services that have many clients which might all retry at the same time to avoid</span>
+    <span class="doccomment">/// the [&quot;thundering herd&quot; problem](https://en.wikipedia.org/wiki/Thundering_herd_problem)</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">with_jitter</span>(
         <span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">jitter</span>: <span class="ident">bool</span>,
@@ -681,7 +691,7 @@
         <span class="self">self</span>
     }
 
-    <span class="doccomment">/// Retries a fallible Future with this policy&#39;s configuration</span>
+    <span class="doccomment">/// Retries a fallible `Future` with this policy&#39;s configuration</span>
     <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">retry</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">task</span>: <span class="ident">T</span>,
@@ -692,7 +702,7 @@
         <span class="self">self</span>.<span class="ident">retry_if</span>(<span class="ident">task</span>, <span class="op">|</span><span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>::<span class="ident">Error</span><span class="op">|</span> <span class="bool-val">true</span>).<span class="kw">await</span>
     }
 
-    <span class="doccomment">/// Retries a fallible Future with this policy&#39;s configuration under certain provided conditions</span>
+    <span class="doccomment">/// Retries a fallible `Future` with this policy&#39;s configuration under certain provided conditions</span>
     <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">retry_if</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">C</span><span class="op">&gt;</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">task</span>: <span class="ident">T</span>,
@@ -729,7 +739,8 @@
 
 <span class="doccomment">/// A type to determine if a failed Future should be retried</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// A implementatin is provided for `Fn(&amp;Err) -&gt; bool`</span>
+<span class="doccomment">/// A implementation is provided for `Fn(&amp;Err) -&gt; bool` allowing you</span>
+<span class="doccomment">/// to use simple closure or fn handles</span>
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Condition</span><span class="op">&lt;</span><span class="ident">E</span><span class="op">&gt;</span> {
     <span class="doccomment">/// Return true if an Futures error is worth retrying</span>
     <span class="kw">fn</span> <span class="ident">is_retryable</span>(
@@ -752,14 +763,15 @@
 
 <span class="doccomment">/// A unit of work to be retried</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// A implementatin is provided for `FnMut() -&gt; Future`</span>
+<span class="doccomment">/// A implementation is provided for `FnMut() -&gt; Future`</span>
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Task</span> {
-    <span class="doccomment">/// The Ok type of Future ouput</span>
+    <span class="doccomment">/// The `Ok` variant of a `Futures` associated Output type</span>
     <span class="kw">type</span> <span class="ident">Item</span>;
-    <span class="doccomment">/// The Err type of Future output</span>
+    <span class="doccomment">/// The `Err` variant of `Futures` associated Output type</span>
     <span class="kw">type</span> <span class="ident">Error</span>: <span class="ident">std</span>::<span class="ident">fmt</span>::<span class="ident">Debug</span>;
+    <span class="doccomment">/// The resulting `Future` type</span>
     <span class="kw">type</span> <span class="ident">Fut</span>: <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Output</span> <span class="op">=</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>::<span class="ident">Item</span>, <span class="self">Self</span>::<span class="ident">Error</span><span class="op">&gt;</span><span class="op">&gt;</span>;
-
+    <span class="doccomment">/// Call the operation which invokes results in a `Future`</span>
     <span class="kw">fn</span> <span class="ident">call</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span>::<span class="ident">Fut</span>;
 }
 
