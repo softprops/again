@@ -3,7 +3,7 @@
 </h1>
 
 <p align="center">
-   retry interfaces for fallible Rustlang std library Futures
+   wasm-compatible retry interfaces for fallible Rustlang std library Futures
 </p>
 
 <div align="center">
