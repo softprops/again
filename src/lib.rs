@@ -63,7 +63,7 @@ pub async fn retry<T>(task: T) -> Result<T::Item, T::Error>
 where
     T: Task,
 {
-    crate::retry_if(task, |_: &T::Error| true).await
+    crate::retry_if(task, Always).await
 }
 
 /// Retries a fallible `Future` under a certain provided conditions with a default `RetryPolicy`
@@ -263,7 +263,7 @@ impl RetryPolicy {
     where
         T: Task,
     {
-        self.retry_if(task, |_: &T::Error| true).await
+        self.retry_if(task, Always).await
     }
 
     /// Retries a fallible `Future` with this policy's configuration under certain provided conditions
@@ -311,6 +311,18 @@ pub trait Condition<E> {
         &mut self,
         error: &E,
     ) -> bool;
+}
+
+struct Always;
+
+impl<E> Condition<E> for Always {
+    #[inline]
+    fn is_retryable(
+        &mut self,
+        _: &E,
+    ) -> bool {
+        true
+    }
 }
 
 impl<F, E> Condition<E> for F
@@ -384,6 +396,11 @@ mod tests {
         assert_eq!(iter.next(), Some(Duration::from_secs(2)));
         assert_eq!(iter.next(), Some(Duration::from_secs(4)));
         assert_eq!(iter.next(), Some(Duration::from_secs(8)));
+    }
+
+    #[test]
+    fn always_is_always_retryable() {
+        assert!(Always.is_retryable(&()))
     }
 
     #[test]
