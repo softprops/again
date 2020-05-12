@@ -2,15 +2,30 @@
 name = "again"
 version = "0.1.0"
 authors = ["softprops <d.tangren@gmail.com>"]
-description = "wasm compatible retry util for std library futures"
+description = "wasm-compatible retry util for std library futures"
 edition = "2018"
+documentation = "https://docs.rs/again"
+homepage = "https://github.com/softprops/again"
+repository = "https://github.com/softprops/again"
+keywords = ["retry", "futures", "futures-retry"]
+license = "MIT"
+readme = "README.md"
+edition = "2018"
+categories = [
+  "asynchronous",
+  "wasm",
+  "web-programming"
+]
+
+[badges]
+maintenance = { status = "actively-developed" }
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 log = "0.4"
-wasm-timer = "0.2"
 rand = "0.7"
+wasm-timer = "0.2"
 
 [dev-dependencies]
 pretty_env_logger = "0.4"
