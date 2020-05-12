@@ -1,4 +1,4 @@
-<h1 align="center">
+``<h1 align="center">
   again ♻️
 </h1>
 
@@ -21,7 +21,7 @@
 	</a>
 </div>
 
-<br />
+<br />``
 
 A goal of any operation should be a successful outcome. This crate gives operations a better chance at achieving that.
 
@@ -49,8 +49,24 @@ async fn main() -> Result<(), Box<dyn Error>> {
 }
 ```
 
+You may not want to retry _every_ kind of error. For correctness you can be more explicit in which kinds of errors should be retried with the module level `retry_if` function.
+
+```rust
+use std::error::Error;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error>> {
+    pretty_env_logger::init();
+    again::retry_if(
+      || reqwest::get("https://api.you.com")
+      reqwest::Error::is_status
+    ).await?;
+    Ok(())
+}
+```
+
 You can also customize retry behavior to suit your applications needs
-with a reusable `RetryPolicy`.
+with a configurable and reusable `RetryPolicy`.
 
 ```rust
 use std::error::Error;
