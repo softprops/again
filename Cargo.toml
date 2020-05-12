@@ -10,7 +10,6 @@ repository = "https://github.com/softprops/again"
 keywords = ["retry", "futures", "futures-retry"]
 license = "MIT"
 readme = "README.md"
-edition = "2018"
 categories = [
   "asynchronous",
   "wasm",

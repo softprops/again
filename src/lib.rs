@@ -50,10 +50,10 @@
 //!
 //! For visibility on when operations fail and are retired, a `log::trace` message is emitted,
 //! logging the `Debug` display of the error and the delay before the next attempt.
-//! 
+//!
 //! # wasm
-//! 
-//! `again` supports [WebAssembly](https://webassembly.org/) targets i.e. `wasm32-unknown-unknown` which should make this 
+//!
+//! `again` supports [WebAssembly](https://webassembly.org/) targets i.e. `wasm32-unknown-unknown` which should make this
 //! crate a good fit for most environments
 use rand::{distributions::OpenClosed01, thread_rng, Rng};
 use std::{cmp::min, future::Future, time::Duration};
