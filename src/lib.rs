@@ -377,9 +377,16 @@ mod tests {
     use std::error::Error;
 
     #[test]
+    fn retry_policy_is_send() {
+        fn test(_: impl Send) {}
+        test(RetryPolicy::default())
+    }
+
+    #[test]
     fn jitter_adds_variance_to_durations() {
         assert!(jitter(Duration::from_secs(1)) != Duration::from_secs(1));
     }
+
     #[test]
     fn backoff_default() {
         assert!(matches!(Backoff::default(), Backoff::Exponential));
@@ -410,11 +417,7 @@ mod tests {
 
     #[test]
     fn closures_impl_condition() {
-        fn test<C>(_: C)
-        where
-            C: Condition<()>,
-        {
-        }
+        fn test(_: impl Condition<()>) {}
         #[allow(clippy::trivially_copy_pass_by_ref)]
         fn foo(_err: &()) -> bool {
             true
@@ -425,16 +428,18 @@ mod tests {
 
     #[test]
     fn closures_impl_task() {
-        fn test<T>(_: T)
-        where
-            T: Task,
-        {
-        }
+        fn test(_: impl Task) {}
         async fn foo() -> Result<u32, ()> {
             Ok(42)
         }
         test(foo);
         test(|| async { Ok::<u32, ()>(42) });
+    }
+
+    #[test]
+    fn retied_futures_are_send_when_tasks_are_send() {
+        fn test(_: impl Send) {}
+        test(RetryPolicy::default().retry(|| async { Ok::<u32, ()>(42) }))
     }
 
     #[tokio::test]
