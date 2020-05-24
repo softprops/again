@@ -76,7 +76,7 @@ use again::RetryPolicy;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     pretty_env_logger::init();
-    let policy = RetryPolicy.exponential(Duration::from_millis(200))
+    let policy = RetryPolicy::exponential(Duration::from_millis(200))
       .with_max_retries(10)
       .with_jitter(true);
     again::retry(|| reqwest::get("https://api.you.com")).await?;
