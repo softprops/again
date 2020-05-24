@@ -79,7 +79,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let policy = RetryPolicy::exponential(Duration::from_millis(200))
       .with_max_retries(10)
       .with_jitter(true);
-    again::retry(|| reqwest::get("https://api.you.com")).await?;
+    policy.retry(|| reqwest::get("https://api.you.com")).await?;
     Ok(())
 }
 ```
