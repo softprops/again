@@ -474,6 +474,14 @@
 <span id="474">474</span>
 <span id="475">475</span>
 <span id="476">476</span>
+<span id="477">477</span>
+<span id="478">478</span>
+<span id="479">479</span>
+<span id="480">480</span>
+<span id="481">481</span>
+<span id="482">482</span>
+<span id="483">483</span>
+<span id="484">484</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! `Again` is a wasm-compatible utility for retrying standard library [`Futures`](https://doc.rust-lang.org/std/future/trait.Future.html) with a `Result` output type</span>
 <span class="doccomment">//!</span>
@@ -528,10 +536,18 @@
 <span class="doccomment">//! For visibility on when operations fail and are retried, a `log::trace` message is emitted,</span>
 <span class="doccomment">//! logging the `Debug` display of the error and the delay before the next attempt.</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! # wasm</span>
+<span class="doccomment">//! # wasm features</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! `again` supports [WebAssembly](https://webassembly.org/) targets i.e. `wasm32-unknown-unknown` which should make this</span>
 <span class="doccomment">//! crate a good fit for most environments</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! Two cargo features exist to support various wasm runtimes: `wasm-bindgen` and `stdweb`.</span>
+<span class="doccomment">//! To enable them add the following to your `Cargo.toml` file.</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! ```toml</span>
+<span class="doccomment">//! [dependencies]</span>
+<span class="doccomment">//! again = { version = &quot;xxx&quot;, features = [&quot;wasm-bindgen&quot;] }</span>
+<span class="doccomment">//! ```</span>
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;rand&quot;</span>)]</span>
 <span class="kw">use</span> <span class="ident">rand</span>::{<span class="ident">distributions</span>::<span class="ident">OpenClosed01</span>, <span class="ident">thread_rng</span>, <span class="ident">Rng</span>};
 <span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">cmp</span>::<span class="ident">min</span>, <span class="ident">future</span>::<span class="ident">Future</span>, <span class="ident">time</span>::<span class="ident">Duration</span>};
