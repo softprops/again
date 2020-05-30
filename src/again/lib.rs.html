@@ -460,6 +460,20 @@
 <span id="460">460</span>
 <span id="461">461</span>
 <span id="462">462</span>
+<span id="463">463</span>
+<span id="464">464</span>
+<span id="465">465</span>
+<span id="466">466</span>
+<span id="467">467</span>
+<span id="468">468</span>
+<span id="469">469</span>
+<span id="470">470</span>
+<span id="471">471</span>
+<span id="472">472</span>
+<span id="473">473</span>
+<span id="474">474</span>
+<span id="475">475</span>
+<span id="476">476</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! `Again` is a wasm-compatible utility for retrying standard library [`Futures`](https://doc.rust-lang.org/std/future/trait.Future.html) with a `Result` output type</span>
 <span class="doccomment">//!</span>
@@ -498,7 +512,7 @@
 <span class="doccomment">//! jitter, and other common retry options. This objects may be reused</span>
 <span class="doccomment">//! across operations. For more information see the [`RetryPolicy`](struct.RetryPolicy.html) docs.</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! ```no_run</span>
+<span class="doccomment">//! ```ignore</span>
 <span class="doccomment">//! use again::RetryPolicy;</span>
 <span class="doccomment">//! use std::time::Duration;</span>
 <span class="doccomment">//!</span>
@@ -511,13 +525,14 @@
 <span class="doccomment">//!</span>
 <span class="doccomment">//! # Logging</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! For visibility on when operations fail and are retired, a `log::trace` message is emitted,</span>
+<span class="doccomment">//! For visibility on when operations fail and are retried, a `log::trace` message is emitted,</span>
 <span class="doccomment">//! logging the `Debug` display of the error and the delay before the next attempt.</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! # wasm</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! `again` supports [WebAssembly](https://webassembly.org/) targets i.e. `wasm32-unknown-unknown` which should make this</span>
 <span class="doccomment">//! crate a good fit for most environments</span>
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;rand&quot;</span>)]</span>
 <span class="kw">use</span> <span class="ident">rand</span>::{<span class="ident">distributions</span>::<span class="ident">OpenClosed01</span>, <span class="ident">thread_rng</span>, <span class="ident">Rng</span>};
 <span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">cmp</span>::<span class="ident">min</span>, <span class="ident">future</span>::<span class="ident">Future</span>, <span class="ident">time</span>::<span class="ident">Duration</span>};
 <span class="kw">use</span> <span class="ident">wasm_timer</span>::<span class="ident">Delay</span>;
@@ -570,6 +585,7 @@
         <span class="ident">BackoffIter</span> {
             <span class="ident">backoff</span>: <span class="self">self</span>,
             <span class="ident">current</span>: <span class="number">1</span>,
+            <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;rand&quot;</span>)]</span>
             <span class="ident">jitter</span>: <span class="ident">policy</span>.<span class="ident">jitter</span>,
             <span class="ident">delay</span>: <span class="ident">policy</span>.<span class="ident">delay</span>,
             <span class="ident">max_delay</span>: <span class="ident">policy</span>.<span class="ident">max_delay</span>,
@@ -581,6 +597,7 @@
 <span class="kw">struct</span> <span class="ident">BackoffIter</span> {
     <span class="ident">backoff</span>: <span class="ident">Backoff</span>,
     <span class="ident">current</span>: <span class="ident">u32</span>,
+    <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;rand&quot;</span>)]</span>
     <span class="ident">jitter</span>: <span class="ident">bool</span>,
     <span class="ident">delay</span>: <span class="ident">Duration</span>,
     <span class="ident">max_delay</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Duration</span><span class="op">&gt;</span>,
@@ -607,8 +624,11 @@
 
             <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">factor</span>) <span class="op">=</span> <span class="ident">factor</span> {
                 <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="kw-2">mut</span> <span class="ident">delay</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">delay</span>.<span class="ident">checked_mul</span>(<span class="ident">factor</span>) {
-                    <span class="kw">if</span> <span class="self">self</span>.<span class="ident">jitter</span> {
-                        <span class="ident">delay</span> <span class="op">=</span> <span class="ident">jitter</span>(<span class="ident">delay</span>);
+                    <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;rand&quot;</span>)]</span>
+                    {
+                        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">jitter</span> {
+                            <span class="ident">delay</span> <span class="op">=</span> <span class="ident">jitter</span>(<span class="ident">delay</span>);
+                        }
                     }
                     <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">max_delay</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">max_delay</span> {
                         <span class="ident">delay</span> <span class="op">=</span> <span class="ident">min</span>(<span class="ident">delay</span>, <span class="ident">max_delay</span>);
@@ -630,6 +650,7 @@
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">RetryPolicy</span> {
     <span class="ident">backoff</span>: <span class="ident">Backoff</span>,
+    <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;rand&quot;</span>)]</span>
     <span class="ident">jitter</span>: <span class="ident">bool</span>,
     <span class="ident">delay</span>: <span class="ident">Duration</span>,
     <span class="ident">max_delay</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Duration</span><span class="op">&gt;</span>,
@@ -641,6 +662,7 @@
         <span class="self">Self</span> {
             <span class="ident">backoff</span>: <span class="ident">Backoff</span>::<span class="ident">default</span>(),
             <span class="ident">delay</span>: <span class="ident">Duration</span>::<span class="ident">from_secs</span>(<span class="number">1</span>),
+            <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;rand&quot;</span>)]</span>
             <span class="ident">jitter</span>: <span class="bool-val">false</span>,
             <span class="ident">max_delay</span>: <span class="prelude-val">None</span>,
             <span class="ident">max_retries</span>: <span class="number">5</span>,
@@ -648,6 +670,7 @@
     }
 }
 
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;rand&quot;</span>)]</span>
 <span class="kw">fn</span> <span class="ident">jitter</span>(<span class="ident">duration</span>: <span class="ident">Duration</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Duration</span> {
     <span class="kw">let</span> <span class="ident">jitter</span>: <span class="ident">f64</span> <span class="op">=</span> <span class="ident">thread_rng</span>().<span class="ident">sample</span>(<span class="ident">OpenClosed01</span>);
     <span class="kw">let</span> <span class="ident">secs</span> <span class="op">=</span> (<span class="ident">duration</span>.<span class="ident">as_secs</span>() <span class="kw">as</span> <span class="ident">f64</span>) <span class="op">*</span> <span class="ident">jitter</span>;
@@ -664,7 +687,7 @@
     <span class="doccomment">/// Configures policy with an exponential</span>
     <span class="doccomment">/// backoff delay.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// By default, Futures will be retied 5 times.</span>
+    <span class="doccomment">/// By default, Futures will be retried 5 times.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// These delays will increase in</span>
     <span class="doccomment">/// length over time. You may wish to cap just how long</span>
@@ -680,11 +703,11 @@
     <span class="doccomment">/// Configures policy with a fixed</span>
     <span class="doccomment">/// backoff delay.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// By default, Futures will be retied 5 times.</span>
+    <span class="doccomment">/// By default, Futures will be retried 5 times.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// These delays will increase in</span>
     <span class="doccomment">/// length over time. You may wish to configure how many</span>
-    <span class="doccomment">/// times a Future will be retired using the [`with_max_retries`](struct.RetryPolicy.html#method.with_max_retries) fn    </span>
+    <span class="doccomment">/// times a Future will be retried using the [`with_max_retries`](struct.RetryPolicy.html#method.with_max_retries) fn</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">fixed</span>(<span class="ident">delay</span>: <span class="ident">Duration</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
             <span class="ident">backoff</span>: <span class="ident">Backoff</span>::<span class="ident">Fixed</span>,
@@ -697,6 +720,7 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// This is useful for services that have many clients which might all retry at the same time to avoid</span>
     <span class="doccomment">/// the [&quot;thundering herd&quot; problem](https://en.wikipedia.org/wiki/Thundering_herd_problem)</span>
+    <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;rand&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">with_jitter</span>(
         <span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">jitter</span>: <span class="ident">bool</span>,
@@ -753,11 +777,14 @@
                 <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span><span class="op">&gt;</span> {
                     <span class="kw">if</span> <span class="ident">condition</span>.<span class="ident">is_retryable</span>(<span class="kw-2">&amp;</span><span class="ident">err</span>) {
                         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">delay</span>) <span class="op">=</span> <span class="ident">backoffs</span>.<span class="ident">next</span>() {
-                            <span class="ident">log</span>::<span class="macro">trace</span><span class="macro">!</span>(
-                                <span class="string">&quot;task failed with error {:?}. will try again in {:?}&quot;</span>,
-                                <span class="ident">err</span>,
-                                <span class="ident">delay</span>
-                            );
+                            <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;log&quot;</span>)]</span>
+                            {
+                                <span class="ident">log</span>::<span class="macro">trace</span><span class="macro">!</span>(
+                                    <span class="string">&quot;task failed with error {:?}. will try again in {:?}&quot;</span>,
+                                    <span class="ident">err</span>,
+                                    <span class="ident">delay</span>
+                                );
+                            }
                             <span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">Delay</span>::<span class="ident">new</span>(<span class="ident">delay</span>).<span class="kw">await</span>;
                             <span class="kw">continue</span>;
                         }
@@ -846,6 +873,7 @@
     }
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
+    <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;rand&quot;</span>)]</span>
     <span class="kw">fn</span> <span class="ident">jitter_adds_variance_to_durations</span>() {
         <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">jitter</span>(<span class="ident">Duration</span>::<span class="ident">from_secs</span>(<span class="number">1</span>)) <span class="op">!</span><span class="op">=</span> <span class="ident">Duration</span>::<span class="ident">from_secs</span>(<span class="number">1</span>));
     }
@@ -900,7 +928,7 @@
     }
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
-    <span class="kw">fn</span> <span class="ident">retied_futures_are_send_when_tasks_are_send</span>() {
+    <span class="kw">fn</span> <span class="ident">retried_futures_are_send_when_tasks_are_send</span>() {
         <span class="kw">fn</span> <span class="ident">test</span>(<span class="kw">_</span>: <span class="kw">impl</span> <span class="ident">Send</span>) {}
         <span class="ident">test</span>(<span class="ident">RetryPolicy</span>::<span class="ident">default</span>().<span class="ident">retry</span>(<span class="op">|</span><span class="op">|</span> <span class="kw">async</span> { <span class="prelude-val">Ok</span>::<span class="op">&lt;</span><span class="ident">u32</span>, ()<span class="op">&gt;</span>(<span class="number">42</span>) }))
     }
