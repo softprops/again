@@ -35,7 +35,7 @@
 //! jitter, and other common retry options. This objects may be reused
 //! across operations. For more information see the [`RetryPolicy`](struct.RetryPolicy.html) docs.
 //!
-//! ```no_run
+//! ```ignore
 //! use again::RetryPolicy;
 //! use std::time::Duration;
 //!
@@ -48,13 +48,14 @@
 //!
 //! # Logging
 //!
-//! For visibility on when operations fail and are retired, a `log::trace` message is emitted,
+//! For visibility on when operations fail and are retried, a `log::trace` message is emitted,
 //! logging the `Debug` display of the error and the delay before the next attempt.
 //!
 //! # wasm
 //!
 //! `again` supports [WebAssembly](https://webassembly.org/) targets i.e. `wasm32-unknown-unknown` which should make this
 //! crate a good fit for most environments
+#[cfg(feature = "rand")]
 use rand::{distributions::OpenClosed01, thread_rng, Rng};
 use std::{cmp::min, future::Future, time::Duration};
 use wasm_timer::Delay;
@@ -107,6 +108,7 @@ impl Backoff {
         BackoffIter {
             backoff: self,
             current: 1,
+            #[cfg(feature = "rand")]
             jitter: policy.jitter,
             delay: policy.delay,
             max_delay: policy.max_delay,
@@ -118,6 +120,7 @@ impl Backoff {
 struct BackoffIter {
     backoff: Backoff,
     current: u32,
+    #[cfg(feature = "rand")]
     jitter: bool,
     delay: Duration,
     max_delay: Option<Duration>,
@@ -144,8 +147,11 @@ impl Iterator for BackoffIter {
 
             if let Some(factor) = factor {
                 if let Some(mut delay) = self.delay.checked_mul(factor) {
-                    if self.jitter {
-                        delay = jitter(delay);
+                    #[cfg(feature = "rand")]
+                    {
+                        if self.jitter {
+                            delay = jitter(delay);
+                        }
                     }
                     if let Some(max_delay) = self.max_delay {
                         delay = min(delay, max_delay);
@@ -167,6 +173,7 @@ impl Iterator for BackoffIter {
 #[derive(Clone)]
 pub struct RetryPolicy {
     backoff: Backoff,
+    #[cfg(feature = "rand")]
     jitter: bool,
     delay: Duration,
     max_delay: Option<Duration>,
@@ -178,6 +185,7 @@ impl Default for RetryPolicy {
         Self {
             backoff: Backoff::default(),
             delay: Duration::from_secs(1),
+            #[cfg(feature = "rand")]
             jitter: false,
             max_delay: None,
             max_retries: 5,
@@ -185,6 +193,7 @@ impl Default for RetryPolicy {
     }
 }
 
+#[cfg(feature = "rand")]
 fn jitter(duration: Duration) -> Duration {
     let jitter: f64 = thread_rng().sample(OpenClosed01);
     let secs = (duration.as_secs() as f64) * jitter;
@@ -201,7 +210,7 @@ impl RetryPolicy {
     /// Configures policy with an exponential
     /// backoff delay.
     ///
-    /// By default, Futures will be retied 5 times.
+    /// By default, Futures will be retried 5 times.
     ///
     /// These delays will increase in
     /// length over time. You may wish to cap just how long
@@ -217,11 +226,11 @@ impl RetryPolicy {
     /// Configures policy with a fixed
     /// backoff delay.
     ///
-    /// By default, Futures will be retied 5 times.
+    /// By default, Futures will be retried 5 times.
     ///
     /// These delays will increase in
     /// length over time. You may wish to configure how many
-    /// times a Future will be retired using the [`with_max_retries`](struct.RetryPolicy.html#method.with_max_retries) fn    
+    /// times a Future will be retried using the [`with_max_retries`](struct.RetryPolicy.html#method.with_max_retries) fn
     pub fn fixed(delay: Duration) -> Self {
         Self {
             backoff: Backoff::Fixed,
@@ -234,6 +243,7 @@ impl RetryPolicy {
     ///
     /// This is useful for services that have many clients which might all retry at the same time to avoid
     /// the ["thundering herd" problem](https://en.wikipedia.org/wiki/Thundering_herd_problem)
+    #[cfg(feature = "rand")]
     pub fn with_jitter(
         mut self,
         jitter: bool,
@@ -290,11 +300,14 @@ impl RetryPolicy {
                 Err(err) => {
                     if condition.is_retryable(&err) {
                         if let Some(delay) = backoffs.next() {
-                            log::trace!(
-                                "task failed with error {:?}. will try again in {:?}",
-                                err,
-                                delay
-                            );
+                            #[cfg(feature = "log")]
+                            {
+                                log::trace!(
+                                    "task failed with error {:?}. will try again in {:?}",
+                                    err,
+                                    delay
+                                );
+                            }
                             let _ = Delay::new(delay).await;
                             continue;
                         }
@@ -383,6 +396,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "rand")]
     fn jitter_adds_variance_to_durations() {
         assert!(jitter(Duration::from_secs(1)) != Duration::from_secs(1));
     }
@@ -437,7 +451,7 @@ mod tests {
     }
 
     #[test]
-    fn retied_futures_are_send_when_tasks_are_send() {
+    fn retried_futures_are_send_when_tasks_are_send() {
         fn test(_: impl Send) {}
         test(RetryPolicy::default().retry(|| async { Ok::<u32, ()>(42) }))
     }
