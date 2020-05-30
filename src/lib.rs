@@ -58,7 +58,7 @@
 //!
 //! Two cargo features exist to support various wasm runtimes: `wasm-bindgen` and `stdweb`.
 //! To enable them add the following to your `Cargo.toml` file.
-//! 
+//!
 //! ```toml
 //! [dependencies]
 //! again = { version = "xxx", features = ["wasm-bindgen"] }
