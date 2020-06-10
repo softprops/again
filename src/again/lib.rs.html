@@ -482,6 +482,33 @@
 <span id="482">482</span>
 <span id="483">483</span>
 <span id="484">484</span>
+<span id="485">485</span>
+<span id="486">486</span>
+<span id="487">487</span>
+<span id="488">488</span>
+<span id="489">489</span>
+<span id="490">490</span>
+<span id="491">491</span>
+<span id="492">492</span>
+<span id="493">493</span>
+<span id="494">494</span>
+<span id="495">495</span>
+<span id="496">496</span>
+<span id="497">497</span>
+<span id="498">498</span>
+<span id="499">499</span>
+<span id="500">500</span>
+<span id="501">501</span>
+<span id="502">502</span>
+<span id="503">503</span>
+<span id="504">504</span>
+<span id="505">505</span>
+<span id="506">506</span>
+<span id="507">507</span>
+<span id="508">508</span>
+<span id="509">509</span>
+<span id="510">510</span>
+<span id="511">511</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! `Again` is a wasm-compatible utility for retrying standard library [`Futures`](https://doc.rust-lang.org/std/future/trait.Future.html) with a `Result` output type</span>
 <span class="doccomment">//!</span>
@@ -584,12 +611,12 @@
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Copy</span>)]</span>
 <span class="kw">enum</span> <span class="ident">Backoff</span> {
     <span class="ident">Fixed</span>,
-    <span class="ident">Exponential</span>,
+    <span class="ident">Exponential</span> { <span class="ident">exponent</span>: <span class="ident">f64</span> },
 }
 
 <span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">Backoff</span> {
     <span class="kw">fn</span> <span class="ident">default</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="ident">Backoff</span>::<span class="ident">Exponential</span>
+        <span class="ident">Backoff</span>::<span class="ident">Exponential</span> { <span class="ident">exponent</span>: <span class="number">2.0</span> }
     }
 }
 
@@ -600,7 +627,7 @@
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">BackoffIter</span> {
         <span class="ident">BackoffIter</span> {
             <span class="ident">backoff</span>: <span class="self">self</span>,
-            <span class="ident">current</span>: <span class="number">1</span>,
+            <span class="ident">current</span>: <span class="number">1.0</span>,
             <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;rand&quot;</span>)]</span>
             <span class="ident">jitter</span>: <span class="ident">policy</span>.<span class="ident">jitter</span>,
             <span class="ident">delay</span>: <span class="ident">policy</span>.<span class="ident">delay</span>,
@@ -612,7 +639,7 @@
 
 <span class="kw">struct</span> <span class="ident">BackoffIter</span> {
     <span class="ident">backoff</span>: <span class="ident">Backoff</span>,
-    <span class="ident">current</span>: <span class="ident">u32</span>,
+    <span class="ident">current</span>: <span class="ident">f64</span>,
     <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;rand&quot;</span>)]</span>
     <span class="ident">jitter</span>: <span class="ident">bool</span>,
     <span class="ident">delay</span>: <span class="ident">Duration</span>,
@@ -625,34 +652,28 @@
     <span class="kw">fn</span> <span class="ident">next</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="self">Self</span>::<span class="ident">Item</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">max_retries</span> <span class="op">&gt;</span> <span class="number">0</span> {
             <span class="kw">let</span> <span class="ident">factor</span> <span class="op">=</span> <span class="kw">match</span> <span class="self">self</span>.<span class="ident">backoff</span> {
-                <span class="ident">Backoff</span>::<span class="ident">Fixed</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="self">self</span>.<span class="ident">current</span>),
-                <span class="ident">Backoff</span>::<span class="ident">Exponential</span> <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="ident">Backoff</span>::<span class="ident">Fixed</span> <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">current</span>,
+                <span class="ident">Backoff</span>::<span class="ident">Exponential</span> { <span class="ident">exponent</span> } <span class="op">=</span><span class="op">&gt;</span> {
                     <span class="kw">let</span> <span class="ident">factor</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">current</span>;
-                    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">next</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">current</span>.<span class="ident">checked_mul</span>(<span class="number">2</span>) {
-                        <span class="self">self</span>.<span class="ident">current</span> <span class="op">=</span> <span class="ident">next</span>;
-                    } <span class="kw">else</span> {
-                        <span class="self">self</span>.<span class="ident">current</span> <span class="op">=</span> <span class="ident">u32</span>::<span class="ident">MAX</span>;
-                    }
-
-                    <span class="prelude-val">Some</span>(<span class="ident">factor</span>)
+                    <span class="kw">let</span> <span class="ident">next_factor</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">current</span> <span class="op">*</span> <span class="ident">exponent</span>;
+                    <span class="self">self</span>.<span class="ident">current</span> <span class="op">=</span> <span class="ident">next_factor</span>;
+                    <span class="ident">factor</span>
                 }
             };
 
-            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">factor</span>) <span class="op">=</span> <span class="ident">factor</span> {
-                <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="kw-2">mut</span> <span class="ident">delay</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">delay</span>.<span class="ident">checked_mul</span>(<span class="ident">factor</span>) {
-                    <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;rand&quot;</span>)]</span>
-                    {
-                        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">jitter</span> {
-                            <span class="ident">delay</span> <span class="op">=</span> <span class="ident">jitter</span>(<span class="ident">delay</span>);
-                        }
-                    }
-                    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">max_delay</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">max_delay</span> {
-                        <span class="ident">delay</span> <span class="op">=</span> <span class="ident">min</span>(<span class="ident">delay</span>, <span class="ident">max_delay</span>);
-                    }
-                    <span class="self">self</span>.<span class="ident">max_retries</span> <span class="op">-</span><span class="op">=</span> <span class="number">1</span>;
-                    <span class="kw">return</span> <span class="prelude-val">Some</span>(<span class="ident">delay</span>);
+            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">delay</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">delay</span>.<span class="ident">mul_f64</span>(<span class="ident">factor</span>);
+            <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;rand&quot;</span>)]</span>
+            {
+                <span class="kw">if</span> <span class="self">self</span>.<span class="ident">jitter</span> {
+                    <span class="ident">delay</span> <span class="op">=</span> <span class="ident">jitter</span>(<span class="ident">delay</span>);
                 }
             }
+            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">max_delay</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">max_delay</span> {
+                <span class="ident">delay</span> <span class="op">=</span> <span class="ident">min</span>(<span class="ident">delay</span>, <span class="ident">max_delay</span>);
+            }
+            <span class="self">self</span>.<span class="ident">max_retries</span> <span class="op">-</span><span class="op">=</span> <span class="number">1</span>;
+
+            <span class="kw">return</span> <span class="prelude-val">Some</span>(<span class="ident">delay</span>);
         }
         <span class="prelude-val">None</span>
     }
@@ -708,9 +729,13 @@
     <span class="doccomment">/// These delays will increase in</span>
     <span class="doccomment">/// length over time. You may wish to cap just how long</span>
     <span class="doccomment">/// using the [`with_max_delay`](struct.Policy.html#method.with_max_delay) fn</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// By default an exponential backoff exponential of 2 will be used. This</span>
+    <span class="doccomment">/// can be modified using the</span>
+    <span class="doccomment">/// [`with_backoff_exponent`](struct.RetryPolicy.html#method.with_backoff_exponent) fn.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">exponential</span>(<span class="ident">delay</span>: <span class="ident">Duration</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
-            <span class="ident">backoff</span>: <span class="ident">Backoff</span>::<span class="ident">Exponential</span>,
+            <span class="ident">backoff</span>: <span class="ident">Backoff</span>::<span class="ident">Exponential</span> { <span class="ident">exponent</span>: <span class="number">2.0f64</span> },
             <span class="ident">delay</span>,
             ..<span class="self">Self</span>::<span class="ident">default</span>()
         }
@@ -730,6 +755,19 @@
             <span class="ident">delay</span>,
             ..<span class="self">Self</span>::<span class="ident">default</span>()
         }
+    }
+
+    <span class="doccomment">/// Set the exponential backoff exponent to be used</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// If not using an exponential backoff, this call will be ignored.</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">with_backoff_exponent</span>(
+        <span class="kw-2">mut</span> <span class="self">self</span>,
+        <span class="ident">exp</span>: <span class="ident">f64</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+        <span class="kw">if</span> <span class="kw">let</span> <span class="ident">Backoff</span>::<span class="ident">Exponential</span> { <span class="kw-2">ref</span> <span class="kw-2">mut</span> <span class="ident">exponent</span> } <span class="op">=</span> <span class="self">self</span>.<span class="ident">backoff</span> {
+            <span class="kw-2">*</span><span class="ident">exponent</span> <span class="op">=</span> <span class="ident">exp</span>;
+        }
+        <span class="self">self</span>
     }
 
     <span class="doccomment">/// Configures randomness to the delay between retries.</span>
@@ -880,6 +918,7 @@
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
 <span class="kw">mod</span> <span class="ident">tests</span> {
     <span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
+    <span class="kw">use</span> <span class="ident">approx</span>::<span class="ident">assert_relative_eq</span>;
     <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">error</span>::<span class="ident">Error</span>;
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
@@ -896,7 +935,11 @@
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">backoff_default</span>() {
-        <span class="macro">assert</span><span class="macro">!</span>(<span class="macro">matches</span><span class="macro">!</span>(<span class="ident">Backoff</span>::<span class="ident">default</span>(), <span class="ident">Backoff</span>::<span class="ident">Exponential</span>));
+        <span class="kw">if</span> <span class="kw">let</span> <span class="ident">Backoff</span>::<span class="ident">Exponential</span> { <span class="ident">exponent</span> } <span class="op">=</span> <span class="ident">Backoff</span>::<span class="ident">default</span>() {
+            <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">exponent</span>, <span class="number">2.0</span>);
+        } <span class="kw">else</span> {
+            <span class="macro">panic</span><span class="macro">!</span>(<span class="string">&quot;Default backoff expected to be exponential!&quot;</span>);
+        }
     }
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
@@ -911,10 +954,21 @@
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">exponential_backoff</span>() {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">iter</span> <span class="op">=</span> <span class="ident">RetryPolicy</span>::<span class="ident">exponential</span>(<span class="ident">Duration</span>::<span class="ident">from_secs</span>(<span class="number">1</span>)).<span class="ident">backoffs</span>();
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">iter</span>.<span class="ident">next</span>(), <span class="prelude-val">Some</span>(<span class="ident">Duration</span>::<span class="ident">from_secs</span>(<span class="number">1</span>)));
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">iter</span>.<span class="ident">next</span>(), <span class="prelude-val">Some</span>(<span class="ident">Duration</span>::<span class="ident">from_secs</span>(<span class="number">2</span>)));
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">iter</span>.<span class="ident">next</span>(), <span class="prelude-val">Some</span>(<span class="ident">Duration</span>::<span class="ident">from_secs</span>(<span class="number">4</span>)));
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">iter</span>.<span class="ident">next</span>(), <span class="prelude-val">Some</span>(<span class="ident">Duration</span>::<span class="ident">from_secs</span>(<span class="number">8</span>)));
+        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">iter</span>.<span class="ident">next</span>().<span class="ident">unwrap</span>().<span class="ident">as_secs_f64</span>(), <span class="number">1.0</span>);
+        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">iter</span>.<span class="ident">next</span>().<span class="ident">unwrap</span>().<span class="ident">as_secs_f64</span>(), <span class="number">2.0</span>);
+        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">iter</span>.<span class="ident">next</span>().<span class="ident">unwrap</span>().<span class="ident">as_secs_f64</span>(), <span class="number">4.0</span>);
+        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">iter</span>.<span class="ident">next</span>().<span class="ident">unwrap</span>().<span class="ident">as_secs_f64</span>(), <span class="number">8.0</span>);
+    }
+
+    <span class="attribute">#[<span class="ident">test</span>]</span>
+    <span class="kw">fn</span> <span class="ident">exponential_backoff_factor</span>() {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">iter</span> <span class="op">=</span> <span class="ident">RetryPolicy</span>::<span class="ident">exponential</span>(<span class="ident">Duration</span>::<span class="ident">from_secs</span>(<span class="number">1</span>))
+            .<span class="ident">with_backoff_exponent</span>(<span class="number">1.5</span>)
+            .<span class="ident">backoffs</span>();
+        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">iter</span>.<span class="ident">next</span>().<span class="ident">unwrap</span>().<span class="ident">as_secs_f64</span>(), <span class="number">1.0</span>);
+        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">iter</span>.<span class="ident">next</span>().<span class="ident">unwrap</span>().<span class="ident">as_secs_f64</span>(), <span class="number">1.5</span>);
+        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">iter</span>.<span class="ident">next</span>().<span class="ident">unwrap</span>().<span class="ident">as_secs_f64</span>(), <span class="number">2.25</span>);
+        <span class="macro">assert_relative_eq</span><span class="macro">!</span>(<span class="ident">iter</span>.<span class="ident">next</span>().<span class="ident">unwrap</span>().<span class="ident">as_secs_f64</span>(), <span class="number">3.375</span>);
     }
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
