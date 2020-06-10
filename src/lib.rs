@@ -99,12 +99,12 @@ where
 #[derive(Clone, Copy)]
 enum Backoff {
     Fixed,
-    Exponential,
+    Exponential { exponent: f64 },
 }
 
 impl Default for Backoff {
     fn default() -> Self {
-        Backoff::Exponential
+        Backoff::Exponential { exponent: 2.0 }
     }
 }
 
@@ -115,7 +115,7 @@ impl Backoff {
     ) -> BackoffIter {
         BackoffIter {
             backoff: self,
-            current: 1,
+            current: 1.0,
             #[cfg(feature = "rand")]
             jitter: policy.jitter,
             delay: policy.delay,
@@ -127,7 +127,7 @@ impl Backoff {
 
 struct BackoffIter {
     backoff: Backoff,
-    current: u32,
+    current: f64,
     #[cfg(feature = "rand")]
     jitter: bool,
     delay: Duration,
@@ -140,34 +140,28 @@ impl Iterator for BackoffIter {
     fn next(&mut self) -> Option<Self::Item> {
         if self.max_retries > 0 {
             let factor = match self.backoff {
-                Backoff::Fixed => Some(self.current),
-                Backoff::Exponential => {
+                Backoff::Fixed => self.current,
+                Backoff::Exponential { exponent } => {
                     let factor = self.current;
-                    if let Some(next) = self.current.checked_mul(2) {
-                        self.current = next;
-                    } else {
-                        self.current = u32::MAX;
-                    }
-
-                    Some(factor)
+                    let next_factor = self.current * exponent;
+                    self.current = next_factor;
+                    factor
                 }
             };
 
-            if let Some(factor) = factor {
-                if let Some(mut delay) = self.delay.checked_mul(factor) {
-                    #[cfg(feature = "rand")]
-                    {
-                        if self.jitter {
-                            delay = jitter(delay);
-                        }
-                    }
-                    if let Some(max_delay) = self.max_delay {
-                        delay = min(delay, max_delay);
-                    }
-                    self.max_retries -= 1;
-                    return Some(delay);
+            let mut delay = self.delay.mul_f64(factor);
+            #[cfg(feature = "rand")]
+            {
+                if self.jitter {
+                    delay = jitter(delay);
                 }
             }
+            if let Some(max_delay) = self.max_delay {
+                delay = min(delay, max_delay);
+            }
+            self.max_retries -= 1;
+
+            return Some(delay);
         }
         None
     }
@@ -223,9 +217,13 @@ impl RetryPolicy {
     /// These delays will increase in
     /// length over time. You may wish to cap just how long
     /// using the [`with_max_delay`](struct.Policy.html#method.with_max_delay) fn
+    ///
+    /// By default an exponential backoff exponential of 2 will be used. This
+    /// can be modified using the
+    /// [`with_backoff_exponent`](struct.RetryPolicy.html#method.with_backoff_exponent) fn.
     pub fn exponential(delay: Duration) -> Self {
         Self {
-            backoff: Backoff::Exponential,
+            backoff: Backoff::Exponential { exponent: 2.0f64 },
             delay,
             ..Self::default()
         }
@@ -245,6 +243,19 @@ impl RetryPolicy {
             delay,
             ..Self::default()
         }
+    }
+
+    /// Set the exponential backoff exponent to be used
+    ///
+    /// If not using an exponential backoff, this call will be ignored.
+    pub fn with_backoff_exponent(
+        mut self,
+        exp: f64,
+    ) -> Self {
+        if let Backoff::Exponential { ref mut exponent } = self.backoff {
+            *exponent = exp;
+        }
+        self
     }
 
     /// Configures randomness to the delay between retries.
@@ -395,6 +406,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use approx::assert_relative_eq;
     use std::error::Error;
 
     #[test]
@@ -411,7 +423,11 @@ mod tests {
 
     #[test]
     fn backoff_default() {
-        assert!(matches!(Backoff::default(), Backoff::Exponential));
+        if let Backoff::Exponential { exponent } = Backoff::default() {
+            assert_relative_eq!(exponent, 2.0);
+        } else {
+            panic!("Default backoff expected to be exponential!");
+        }
     }
 
     #[test]
@@ -426,10 +442,21 @@ mod tests {
     #[test]
     fn exponential_backoff() {
         let mut iter = RetryPolicy::exponential(Duration::from_secs(1)).backoffs();
-        assert_eq!(iter.next(), Some(Duration::from_secs(1)));
-        assert_eq!(iter.next(), Some(Duration::from_secs(2)));
-        assert_eq!(iter.next(), Some(Duration::from_secs(4)));
-        assert_eq!(iter.next(), Some(Duration::from_secs(8)));
+        assert_relative_eq!(iter.next().unwrap().as_secs_f64(), 1.0);
+        assert_relative_eq!(iter.next().unwrap().as_secs_f64(), 2.0);
+        assert_relative_eq!(iter.next().unwrap().as_secs_f64(), 4.0);
+        assert_relative_eq!(iter.next().unwrap().as_secs_f64(), 8.0);
+    }
+
+    #[test]
+    fn exponential_backoff_factor() {
+        let mut iter = RetryPolicy::exponential(Duration::from_secs(1))
+            .with_backoff_exponent(1.5)
+            .backoffs();
+        assert_relative_eq!(iter.next().unwrap().as_secs_f64(), 1.0);
+        assert_relative_eq!(iter.next().unwrap().as_secs_f64(), 1.5);
+        assert_relative_eq!(iter.next().unwrap().as_secs_f64(), 2.25);
+        assert_relative_eq!(iter.next().unwrap().as_secs_f64(), 3.375);
     }
 
     #[test]

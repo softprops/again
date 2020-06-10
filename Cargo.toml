@@ -31,6 +31,7 @@ rand = { version = "0.7", optional = true }
 wasm-timer = "0.2"
 
 [dev-dependencies]
+approx = "0.3"
 pretty_env_logger = "0.4"
 reqwest = "0.10"
 tokio = { version = "0.2", features = ["rt-threaded","macros"] }
