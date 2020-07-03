@@ -1,6 +1,7 @@
 # Unreleased
 
 * allow for exponential backoff exponent to be configured [#5](https://github.com/softprops/again/pull/5)
+* add `collect` [#6](https://github.com/softprops/again/pull/6)
 
 # 0.1.2
 

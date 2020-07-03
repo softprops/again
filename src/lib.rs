@@ -80,7 +80,7 @@ where
     crate::retry_if(task, Always).await
 }
 
-/// Retries a fallible `Future` under a certain provided conditions with a default `RetryPolicy`
+/// Retries a fallible `Future` under a certain provided condition with a default `RetryPolicy`
 ///
 /// ```
 /// again::retry_if(|| async { Err::<u32, u32>(7) }, |err: &u32| *err != 42);
@@ -94,6 +94,30 @@ where
     C: Condition<T::Error>,
 {
     RetryPolicy::default().retry_if(task, condition).await
+}
+
+/// Reruns and collects the results of a successful `Future` under a certain provided condition
+/// with a default `RetryPolicy`
+///
+/// ```
+/// again::collect(
+///     |i: u32| async move { Ok::<u32, ()>(i + 1) },
+///     |r: &u32| if *r != 32 { Some(*r) } else { None },
+///     1 as u32,
+/// );
+/// ```
+pub async fn collect<T, C, S>(
+    task: T,
+    condition: C,
+    start_value: S,
+) -> Result<Vec<T::Item>, T::Error>
+where
+    T: TaskWithParameter<S>,
+    C: SuccessCondition<T::Item, S>,
+{
+    RetryPolicy::default()
+        .collect(task, condition, start_value)
+        .await
 }
 
 #[derive(Clone, Copy)]
@@ -300,6 +324,52 @@ impl RetryPolicy {
         self.retry_if(task, Always).await
     }
 
+    /// Reruns and collects the results of a successful `Future` with this policy's
+    /// configuration under a certain provided condition
+    pub async fn collect<T, C, S>(
+        &self,
+        task: T,
+        condition: C,
+        start_value: S,
+    ) -> Result<Vec<T::Item>, T::Error>
+    where
+        T: TaskWithParameter<S>,
+        C: SuccessCondition<T::Item, S>,
+    {
+        let mut backoffs = self.backoffs();
+        let mut condition = condition;
+        let mut task = task;
+        let mut results = vec![];
+        let mut input = start_value;
+
+        loop {
+            match task.call(input).await {
+                Ok(result) => {
+                    let maybe_new_input = condition.retry_with(&result);
+                    results.push(result);
+
+                    if let Some(new_input) = maybe_new_input {
+                        if let Some(delay) = backoffs.next() {
+                            #[cfg(feature = "log")]
+                            {
+                                log::trace!(
+                                    "task succeeded and condition is met. will run again in {:?}",
+                                    delay
+                                );
+                            }
+                            let _ = Delay::new(delay).await;
+                            input = new_input;
+                            continue;
+                        }
+                    }
+
+                    return Ok(results);
+                }
+                Err(err) => return Err(err),
+            }
+        }
+    }
+
     /// Retries a fallible `Future` with this policy's configuration under certain provided conditions
     pub async fn retry_if<T, C>(
         &self,
@@ -341,9 +411,9 @@ impl RetryPolicy {
 /// A type to determine if a failed Future should be retried
 ///
 /// A implementation is provided for `Fn(&Err) -> bool` allowing you
-/// to use simple closure or fn handles
+/// to use a simple closure or fn handles
 pub trait Condition<E> {
-    /// Return true if an Futures error is worth retrying
+    /// Return true if a Future error is worth retrying
     fn is_retryable(
         &mut self,
         error: &E,
@@ -371,6 +441,66 @@ where
         error: &E,
     ) -> bool {
         self(error)
+    }
+}
+
+/// A type to determine if a successful Future should be retried
+///
+/// A implementation is provided for `Fn(&Result) -> Option<S>`, where S
+/// represents the next input value, allowing you to use a simple closure
+/// or fn handles
+pub trait SuccessCondition<R, S> {
+    /// Return true if a Future result is worth retrying
+    fn retry_with(
+        &mut self,
+        result: &R,
+    ) -> Option<S>;
+}
+
+impl<F, R, S> SuccessCondition<R, S> for F
+where
+    F: Fn(&R) -> Option<S>,
+{
+    fn retry_with(
+        &mut self,
+        result: &R,
+    ) -> Option<S> {
+        self(result)
+    }
+}
+
+/// A unit of work to be retried, that accepts a parameter
+///
+/// A implementation is provided for `FnMut() -> Future`
+pub trait TaskWithParameter<P> {
+    /// The `Ok` variant of a `Futures` associated Output type
+    type Item;
+    /// The `Err` variant of `Futures` associated Output type
+    type Error: std::fmt::Debug;
+    /// The resulting `Future` type
+    type Fut: Future<Output = Result<Self::Item, Self::Error>>;
+    /// Call the operation which invokes results in a `Future`
+    fn call(
+        &mut self,
+        parameter: P,
+    ) -> Self::Fut;
+}
+
+impl<F, Fut, I, P, E> TaskWithParameter<P> for F
+where
+    F: FnMut(P) -> Fut,
+    Fut: Future<Output = Result<I, E>>,
+    E: std::fmt::Debug,
+{
+    type Item = I;
+    type Error = E;
+    type Fut = Fut;
+
+    fn call(
+        &mut self,
+        p: P,
+    ) -> Self::Fut {
+        self(p)
     }
 }
 
@@ -489,6 +619,32 @@ mod tests {
     fn retried_futures_are_send_when_tasks_are_send() {
         fn test(_: impl Send) {}
         test(RetryPolicy::default().retry(|| async { Ok::<u32, ()>(42) }))
+    }
+
+    #[tokio::test]
+    async fn collect_retries_when_condition_is_met() -> Result<(), Box<dyn Error>> {
+        let result = RetryPolicy::fixed(Duration::from_millis(1))
+            .collect(
+                |input: u32| async move { Ok::<u32, ()>(input + 1) },
+                |result: &u32| if *result < 2 { Some(*result) } else { None },
+                0 as u32,
+            )
+            .await;
+        assert_eq!(result, Ok(vec![1, 2]));
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn collect_retries_when_condition_is_not_met() -> Result<(), Box<dyn Error>> {
+        let result = RetryPolicy::fixed(Duration::from_millis(1))
+            .collect(
+                |input: u32| async move { Ok::<u32, ()>(input + 1) },
+                |result: &u32| if *result < 1 { Some(*result) } else { None },
+                0 as u32,
+            )
+            .await;
+        assert_eq!(result, Ok(vec![1]));
+        Ok(())
     }
 
     #[tokio::test]
