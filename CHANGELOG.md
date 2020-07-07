@@ -2,6 +2,7 @@
 
 * allow for exponential backoff exponent to be configured [#5](https://github.com/softprops/again/pull/5)
 * add `collect` [#6](https://github.com/softprops/again/pull/6)
+* add `collect_and_retry` [#7](https://github.com/softprops/again/pull/7)
 
 # 0.1.2
 
