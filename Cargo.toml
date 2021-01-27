@@ -22,12 +22,11 @@ maintenance = { status = "actively-developed" }
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [features]
 default = ["log", "rand"]
-wasm-bindgen = ["rand/wasm-bindgen"]
-stdweb = ["rand/stdweb"]
 
 [dependencies]
 log = { version = "0.4", optional = true }
-rand = { version = "0.7", optional = true }
+rand = { version = "0.8", optional = true }
+getrandom = { version = "0.2.2", optional = true }
 wasm-timer = "0.2"
 
 [dev-dependencies]
