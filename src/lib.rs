@@ -534,7 +534,7 @@ impl<E> Condition<E> for Always {
 
 impl<F, E> Condition<E> for F
 where
-    F: Fn(&E) -> bool,
+    F: FnMut(&E) -> bool,
 {
     fn is_retryable(
         &mut self,
