@@ -22,16 +22,16 @@ maintenance = { status = "actively-developed" }
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [features]
 default = ["log", "rand"]
-wasm-bindgen = ["rand/wasm-bindgen"]
-stdweb = ["rand/stdweb"]
+wasm-bindgen = ["getrandom/wasm-bindgen"]
 
 [dependencies]
 log = { version = "0.4", optional = true }
-rand = { version = "0.7", optional = true }
+rand = { version = "0.8", optional = true }
+getrandom = { version = "0.2", optional = true }
 wasm-timer = "0.2"
 
 [dev-dependencies]
-approx = "0.3"
+approx = "0.5"
 pretty_env_logger = "0.4"
-reqwest = "0.10"
-tokio = { version = "0.2", features = ["rt-threaded","macros"] }
+reqwest = "0.11"
+tokio = { version = "1", features = ["rt-multi-thread","macros"] }
