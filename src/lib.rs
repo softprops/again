@@ -63,10 +63,10 @@
 //! [dependencies]
 //! again = { version = "xxx", features = ["wasm-bindgen"] }
 //! ```
+use futures_timer::Delay;
 #[cfg(feature = "rand")]
 use rand::{distributions::OpenClosed01, thread_rng, Rng};
 use std::{cmp::min, future::Future, time::Duration};
-use wasm_timer::Delay;
 
 /// Retries a fallible `Future` with a default `RetryPolicy`
 ///
